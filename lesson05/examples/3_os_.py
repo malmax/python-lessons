@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+"""Малахов Максим."""
 import os
 print('os.name = ', os.name)
 print('os.environ = ', os.environ)
