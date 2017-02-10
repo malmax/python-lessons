@@ -1,4 +1,5 @@
-
+# -*- coding: utf-8 -*-
+"""Малахов Максим."""
 # Модуль subprocess позволяет работать с процессами
 from subprocess import Popen, CREATE_NEW_CONSOLE
 import os
@@ -15,7 +16,7 @@ for f in os.listdir():
 print(files)
 
 # Для создания процесса используем класс Popen
-# Будет создан процесс архиватора. 
+# Будет создан процесс архиватора.
 # Флаг CREATE_NEW_CONSOLE укажет Popen создат новую консоль для процесса
 packer = Popen('7z a test.zip {}'.format(' '.join(files)), creationflags=CREATE_NEW_CONSOLE)
 
@@ -24,4 +25,3 @@ packer.wait()
 
 # Переименовываем файл, созданный архиватором
 os.rename('test.zip', 'kolbasa.zzz')
-

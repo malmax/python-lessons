@@ -5,7 +5,7 @@ print('os.name = ', os.name)
 print('os.environ = ', os.environ)
 print('os.getcwd() = ', os.getcwd())
 
-files = os.listdir(path=os.getcwd())
+files = os.listdir(os.getcwd())
 print(files)
 
 print("current dir = ", os.path.dirname(__file__))

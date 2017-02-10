@@ -24,7 +24,6 @@ with open(os.path.join(DIR, 'data'), 'r', encoding='UTF-8') as f:
         if wanted_symbol in line:  # пока не найдем нужную информацию
             print(line)
             break  # как нашли, заканчиваем чтение файла
-    else:
-        print("Искомая информация в файле '%s' не найдена" % f.name)
+        else:
+            print("Искомая информация в файле '%s' не найдена" % f.name)
     # Файл будет автоматически закрыт по окончанию инструкции with
-
