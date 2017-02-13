@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
 """Малахов Максим."""
+import sqlite3
 import urllib
 import gzip
 import json
 import sys
+import os
 from grab import Grab
 
 
@@ -48,7 +50,6 @@ class WeatherConnect:
         self.__email = email
         self.__password = password
         self.__isLogin = False
-        self.auth()
 
     def auth(self):
         """Аутентификация на сервере."""
@@ -68,33 +69,76 @@ class WeatherConnect:
             api_keys = [x.text for x in self.g.css_list('.api-keys td pre')]
             with(open('app.id', 'w', encoding='utf-8')) as f:
                 f.write('\n'.join(api_keys))
+        else:
+            self.auth()
+            self.get_keys()
 
     def download_cities(self, arg=None):
         """Загружаем архив с городами и распаковываем его."""
-        print("get cities")
-        url = "http://bulk.openweathermap.org/sample/city.list.json.gz"
+        if self.__isLogin:
+            print("get cities")
+            url = "http://bulk.openweathermap.org/sample/city.list.json.gz"
 
-        with(urllib.request.urlopen(url)) as u:
-            gz = u.read()
-        # записываем архив
-        with(open("city.list.json.gz", "wb")) as f:
-            f.write(gz)
-        # распаковываем
-        with(gzip.open("city.list.json.gz", "rb")) as f_in:
-            data_content = f_in.read()
-
-        with(open("city.list.json", "w", encoding='UTF-8')) as f_out:
-            f_out.write(data_content)
+            with(urllib.request.urlopen(url)) as u:
+                gz = u.read()
+            # записываем архив
+            with(open("city.list.json.gz", "wb")) as f:
+                f.write(gz)
+            # распаковываем
+            with(gzip.open('city.list.json.gz', 'rb')) as fp:
+                with(open('city.list.json', 'wb')) as fo:
+                        fo.write(fp.read().strip())
+        else:
+            self.auth()
+            self.get_keys()
 
     def get_all_cities(self):
         """Получение всех городов."""
-        with(open("city.list.json", "r", encoding='UTF-8')) as f:
-            read = f.read()
-        return json.load(read)
+        if os.path.isfile('city.list.json'):
+            objs = []
+            with(open("city.list.json", "r", encoding='UTF-8')) as f:
+                for line in f:
+                    objs.append(json.loads(line))
+            return objs
+        else:
+            self.download_cities()
+            return self.get_all_cities()
 
-    def get_cities_by_country(self, country='RU'):
+    def get_cities_by_country(self, country):
         """Загрузка всех городов по стране."""
-        print(list(filter(lambda x: x.country == country, self.get_all_cities())))
+        cities = self.get_all_cities()
+        countries = list(set([x['country'] for x in cities]))
+        countries = sorted(countries)
+
+        print("Список стран: ", countries)
+        while country not in countries:
+            country = input('Введите название страны: ').strip().upper()
+
+        connection = self.get_db(country)
+        c = connection.cursor()
+
+        objs = filter(lambda x: x['country'] == country, cities)
+        objs = sorted(objs, key=lambda x: x['name'])
+        for city in objs:
+            # print(city['name'])
+            q = 'REPLACE INTO cities (id, city, date, temp, id_weather)\
+               VALUES({}, "{}", datetime(), NULL, {})\
+             '.format(city['_id'], city['name'], city['_id'])
+            print(q)
+            c.execute(q)
+
+    def get_db(self, dbname):
+        """Коннектимся к БД."""
+        dbpath = './db/{}.sqlite'.format(dbname)
+        if os.path.isfile(dbpath):
+            return sqlite3.connect(dbpath)
+        else:
+            conn = sqlite3.connect(dbpath)
+            c = conn.cursor()
+            c.execute('''CREATE TABLE cities
+             (id INTEGER PRIMARY KEY AUTOINCREMENT, city text,
+             date date, temp INT, id_weather INT)''')
+            return conn
 
 
 weather = WeatherConnect('malmax.spb@gmail.com', 'malmaster')
